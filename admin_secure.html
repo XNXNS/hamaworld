@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>접속 현황 · 관리자</title>
+<style>
+body{margin:0;background:#101828;color:#e6ebf7;font:15px/1.6 "Noto Sans KR","Malgun Gothic",sans-serif;padding:18px}
+h1{font-size:20px;margin:0 0 12px}.card{background:#1d2944;border:1px solid #3b4f7d;border-radius:12px;padding:14px;max-width:760px;margin:0 auto 14px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #2c3a5c}th{color:#9fb0cf;font-weight:600}
+input,button{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #3b4f7d;background:#0e1424;color:#e6ebf7}button{cursor:pointer;background:#2b4a8b}
+.dev{color:#fff;text-shadow:0 0 4px #fff,0 0 10px #0ff,0 0 20px #f0f;font-weight:700}.mut{color:#7e8fb0}.err{color:#ff8a8a}.tag{display:inline-block;border-radius:10px;padding:0 8px;font-size:12px;background:#2c3a5c}
+.del{background:#8b2b2b;padding:3px 10px;font-size:13px}</style></head><body>
+<div class="card" id="gate"><h1>🔒 관리자 접속 현황</h1><p class="mut">개발자 계정 비밀번호를 입력하세요.</p>
+<input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호"> <button id="go">로그인</button><p class="err" id="er"></p></div>
+<div id="app" style="display:none">
+<div class="card"><h1>👥 지금 접속 중 <span id="cnt" class="tag">0</span> <span id="by" class="mut" style="font-size:13px"></span> <button id="out" style="float:right;font-size:12px;padding:4px 10px">로그아웃</button></h1>
+<table><thead><tr><th>이름</th><th>위치</th><th>마지막 신호</th><th>관리</th></tr></thead><tbody id="rows"></tbody></table>
+<p class="mut" style="font-size:12px;margin:8px 0 0">이름은 게임이 자동으로 정한 익명 이름이에요. IP나 개인정보는 수집하지 않아요.</p></div>
+<div class="card"><h1>🚫 퇴장 기록 <span id="kbc" class="tag">0</span> <span style="float:right"><button id="kbx" class="del">만료된 것 정리</button> <button id="kba" class="del">전체 해제</button></span></h1><div id="kbl" class="mut" style="max-height:200px;overflow:auto">불러오는 중…</div><p class="mut" style="font-size:12px;margin:8px 0 0">퇴장은 10분(3분 퇴장은 3분) 뒤 자동으로 풀려요. 개발자 퇴장·추방도 여기에 기록돼요. 해제하면 바로 다시 들어올 수 있어요.</p></div>
+<div class="card"><h1>🌍 월드 3 라운지 <span id="lc" class="tag">0</span></h1><div id="lounge" class="mut">아무도 없어요</div></div>
+<div class="card"><h1>🏛 만남의 광장 <span id="pc" class="tag">0</span></h1><div id="plaza" class="mut">아무도 없어요</div><p class="mut" style="font-size:12px;margin:8px 0 0">퇴장시키면 10분간 라운지·광장에 들어올 수 없어요. 아래 퇴장 기록에서 해제할 수 있어요.</p></div>
+<div class="card"><h1>💬 채팅 관리 <button id="cclr" class="del" style="float:right">전체 삭제</button></h1><select id="room"><option value="chat">일반 채팅</option><option value="chat3">월드 3 라운지</option></select><div id="chatrows" style="margin-top:8px;max-height:320px;overflow:auto"></div><p class="mut" style="font-size:12px;margin:8px 0 0">최근 50개 메시지예요. 🗑를 누르면 모든 사람의 화면에서 바로 사라져요.</p></div>
+<div class="card"><h1>🏅 티어 부여 <span id="tgc" class="tag">0</span></h1><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="tgp" style="flex:1;min-width:160px"><option value="">대상이 없어요</option></select><select id="tgt"><option value="4">♾️ 인피니티</option><option value="3">🔥 불멸</option><option value="2">💎 다이아</option><option value="1">⚔️ 고수</option></select><button id="tgb">부여</button></div><div id="tgl" class="mut" style="margin-top:8px">부여한 티어가 없어요</div><p class="mut" style="font-size:12px;margin:8px 0 0">지금 접속 중이거나 리더보드에 기록이 있는 플레이어에게 부여할 수 있어요. 부여한 티어는 리더보드 순위와 상관없이 우선 적용되고, 해제하면 순위 기준 티어로 돌아가요.</p></div>
+<div class="card"><h1>🏆 리더보드 <span id="lbc" class="tag">0</span></h1><table><thead><tr><th>순위</th><th>닉네임</th><th>티어</th><th>기록</th><th></th></tr></thead><tbody id="lbrows"></tbody></table><p class="mut" style="font-size:12px;margin:8px 0 0">2시간 이내 클리어 기록에 티어가 부여돼요. 삭제하면 바로 리더보드에서 사라지고 순위·티어가 다시 계산돼요. (1~20위 ♾️ · 21~50위 🔥 · 51~90위 💎 · 91위~ ⚔️)</p></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const CFG={apiKey:"AIzaSyBEQm2w51lapMKaVo_7mRCR2p7P7jYV7bY",authDomain:"hamaworld-a8b4d.firebaseapp.com",databaseURL:"https://hamaworld-a8b4d-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"hamaworld-a8b4d",storageBucket:"hamaworld-a8b4d.firebasestorage.app",messagingSenderId:"731886984194",appId:"1:731886984194:web:ada287e6fbf0d77d729b1b"};
+// 게임(Hamaworld_secure.html)과 같은 값으로 바꾸세요. 비밀번호는 코드에 없어요.
+const DEV_EMAIL="simonlee2011@naver.com",DEV_UID="3AeWr4wC16ONiC7KA2P6AsWa0L22";
+const $=s=>document.querySelector(s);
+const IDLE=100000,IKMS=180000; // 100초 이상 무활동 → 3분 킥 가능
+const WN={1:"월드 1",2:"월드 2",3:"월드 3 라운지"};
+const TB=["","⚔️","💎","🔥","♾️"],TN=["","고수","다이아","불멸","인피니티"],tierOf=(i,p)=>p<=7200?(i<20?4:i<50?3:i<90?2:1):0;
+function fT(x){if(x===0)return"0.00초";x=Math.floor(x);return[Math.floor(x/3600),Math.floor(x%3600/60),x%60].map(v=>String(v).padStart(2,"0")).join(":")}
+function esc(s){const d=document.createElement("span");d.textContent=s;return d.innerHTML}
+firebase.initializeApp(CFG);const auth=firebase.auth(),db=firebase.database();
+let started=0,off=0,last={},offs=[],lmap={},lbL=[],tgd={},tgMap={};
+function stop(){offs.forEach(f=>f());offs=[];started=0;last={};$("#app").style.display="none";$("#gate").style.display="block"}
+function draw(){const now=Date.now()+off,ids=Object.keys(last).filter(i=>{const t=last[i]&&last[i].t;return !t||now-t<=180000});$("#cnt").textContent=ids.length;
+ const by={1:0,2:0,3:0};let bp=0;ids.forEach(i=>{const w=last[i].w;if(w==3&&lmap[last[i].u]===1){bp++;return}if(by[w]!=null)by[w]++});$("#by").textContent="월드1 "+by[1]+" · 월드2 "+by[2]+" · 라운지 "+by[3]+" · 광장 "+bp;
+ ids.sort((a,b)=>(last[b].d||0)-(last[a].d||0)||String(last[a].n).localeCompare(String(last[b].n)));
+ $("#rows").innerHTML=ids.map(i=>{const o=last[i],ago=o.t?Math.max(0,Math.round((now-o.t)/1000)):null,stale=ago!=null&&ago>30,idle=!!o.t&&now-(o.a||o.t)>IDLE;
+  return "<tr><td>"+(o.d?'<span class="dev">👑 '+esc(o.n)+"</span>":esc(o.n))+"</td><td>"+(o.w==3&&lmap[o.u]===1?"🏛 만남의 광장":(WN[o.w]||"?"))+(o.w==1&&o.lv?' <span class="mut">Lv.'+(o.lv|0)+"</span>":"")+"</td><td class=\""+(stale?"err":"mut")+"\">"+(ago==null?"-":ago+"초 전")+(stale?" (불안정)":"")+(idle?" · ⏱ 방치":"")+"</td><td>"+(o.d?(stale?"":'<button class="del" data-sk="'+esc(i)+'" data-st="0" data-m="lounge" data-ms="180000">'+(idle?"⏱ ":"")+'3분 퇴장</button> <button class="del" data-sk="'+esc(i)+'" data-st="0" data-m="lounge" data-ms="600000">10분 퇴장</button> ')+'<button class="del" data-sk="'+esc(i)+'" data-st="'+(stale?1:0)+'" data-m="lock">'+(stale?"접속 끊기":"개발자 추방")+"</button>":(o.u?'<button class="del" data-ku="'+esc(o.u)+'"'+(idle?' data-ms="180000">⏱ 3분 킥':'>퇴장')+"</button>":(idle?'<button class="del" data-sk="'+esc(i)+'" data-st="1" data-m="lock">접속 끊기</button>':"-")))+"</td></tr>"}).join("")||'<tr><td colspan="4" class="mut">아무도 없어요</td></tr>'}
+function start(){if(started)return;started=1;$("#gate").style.display="none";$("#app").style.display="block";
+ const r1=db.ref(".info/serverTimeOffset"),r2=db.ref("presence"),r3=db.ref("lounge"),r6=db.ref("kick"),r4=db.ref("lb").orderByChild("p").limitToFirst(100);
+ const c1=s=>{off=s.val()||0},c2=s=>{last=s.val()||{};draw();tgOpts()},c3=s=>{const v0=s.val()||{},nw=Date.now()+off,A=[[],[]];lmap={};
+  Object.keys(v0).forEach(k=>{const o=v0[k];if(!o)return;if(typeof o.t=="number"&&nw-o.t>180000){db.ref("lounge/"+k).remove().catch(()=>{});return}
+   const km=/^(.+)_([01])([0-3])([0-5])$/.exec(k),a=km?+km[2]:0,pid=km?km[1]:k;if(o.u)lmap[o.u]=a;A[a].push({k:k,pid:pid,o:o})});
+  const row=x=>{const o=x.o,nm=o.d?'<span class="dev">👑 '+esc(o.n)+"</span>":esc(o.n),sf=o.u?' <span class="mut" style="font-size:12px">#'+esc(String(o.u).slice(-4))+"</span>":"",bt=o.d?'<button class="del" data-sk="'+esc(x.pid)+'" data-st="0" data-m="lounge" data-ms="180000">3분 퇴장</button> <button class="del" data-sk="'+esc(x.pid)+'" data-st="0" data-m="lounge" data-ms="600000">10분 퇴장</button>':(o.u?'<button class="del" data-ku="'+esc(o.u)+'">퇴장</button>':"");
+   return '<div style="display:flex;gap:8px;align-items:center;padding:2px 0"><span style="flex:1">'+nm+sf+"</span>"+bt+"</div>"};
+  $("#lc").textContent=A[0].length;$("#pc").textContent=A[1].length;
+  $("#lounge").innerHTML=A[0].length?A[0].map(row).join(""):"아무도 없어요";$("#plaza").innerHTML=A[1].length?A[1].map(row).join(""):"아무도 없어요";draw()};
+ const c4=s=>{const l=[];s.forEach(c=>{const x=c.val();if(x&&typeof x.p=="number")l.push(Object.assign({key:c.key},x))});l.sort((x,y)=>x.p-y.p||(+x.t||0)-(+y.t||0));lbL=l;tgOpts();$("#lbc").textContent=l.length;$("#lbrows").innerHTML=l.map((x,i)=>{const t=tierOf(i,x.p);return "<tr><td>"+(i+1)+"</td><td>"+esc(String(x.n||"").slice(0,12))+"</td><td>"+(t?TB[t]+" "+TN[t]:"-")+"</td><td>"+fT(x.p)+"</td><td><button class=\"del\" data-k=\""+esc(x.key)+"\">삭제</button></td></tr>"}).join("")||'<tr><td colspan="5" class="mut">기록이 없어요</td></tr>'};
+ r4.on("value",c4,e=>{$("#lbrows").innerHTML='<tr><td colspan="5" class="err">⚠ '+esc(e.message||String(e))+"</td></tr>"});
+ let cq=null,cc=null;const cr=()=>$("#room").value;
+ const sub=()=>{if(cq&&cc)cq.off("value",cc);cq=db.ref(cr()).limitToLast(50);cc=s=>{const l=[];s.forEach(c=>{const v=c.val();if(v&&typeof v.m=="string")l.push(Object.assign({key:c.key},v))});$("#chatrows").innerHTML=l.map(x=>{const d=x.t?new Date(+x.t):null,ts=d&&!isNaN(d)?(d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+" ":"";return '<div style="padding:3px 0;border-bottom:1px solid #2c3a5c"><span class="mut">'+ts+'</span><b'+(x.d?' class="dev"':"")+'>'+esc(String(x.n||"").slice(0,12))+'</b>: '+esc(String(x.m).slice(0,100))+' <button class="del" data-ck="'+esc(x.key)+'">🗑</button></div>'}).join("")||'<span class="mut">메시지가 없어요</span>'};cq.on("value",cc,e=>{$("#chatrows").innerHTML='<span class="err">⚠ '+esc(e.message||String(e))+"</span>"})};
+ sub();$("#room").onchange=sub;
+ $("#chatrows").onclick=e=>{const b=e.target.closest&&e.target.closest("button[data-ck]");if(!b)return;b.disabled=true;db.ref(cr()+"/"+b.dataset.ck).remove().catch(er=>{b.disabled=false;alert("삭제 실패: "+(er&&er.message||er))})};
+ $("#cclr").onclick=()=>{if(confirm("이 채팅방의 메시지를 모두 삭제할까요?"))db.ref(cr()).remove().catch(er=>alert("삭제 실패: "+(er&&er.message||er)))};
+ const c6=s=>{kbd=s.val()||{};kbDraw()};const r8=db.ref("tier"),c8=s=>{tgd=s.val()||{};tgDraw()};r8.on("value",c8,e=>{$("#tgl").innerHTML='<span class="err">⚠ '+esc(e.message||String(e))+"</span>"});const r7=db.ref("kickS"),c7=s=>{kbs=s.val()||{};kbDraw()};r7.on("value",c7,()=>{});r6.on("value",c6,e=>{$("#kbl").innerHTML='<span class="err">⚠ '+esc(e.message||String(e))+"</span>"});r1.on("value",c1);r2.on("value",c2,e=>{$("#rows").innerHTML='<tr><td colspan="3" class="err">⚠ '+esc(e.message||String(e))+"</td></tr>"});r3.on("value",c3);
+ const iv=setInterval(()=>{draw();kbDraw()},3000);
+ offs=[()=>r1.off("value",c1),()=>r2.off("value",c2),()=>r3.off("value",c3),()=>{if(cq&&cc)cq.off("value",cc)},()=>r4.off("value",c4),()=>r6.off("value",c6),()=>r7.off("value",c7),()=>r8.off("value",c8),()=>clearInterval(iv)]}
+auth.onAuthStateChanged(u=>{if(u&&!u.isAnonymous&&u.uid===DEV_UID)start();else{if(started)stop();if(u&&u.uid!==DEV_UID)auth.signOut()}});
+function login(){const pw=$("#pw").value;if(!pw)return;$("#er").textContent="확인 중…";
+ auth.signInWithEmailAndPassword(DEV_EMAIL,pw).then(c=>{$("#pw").value="";$("#er").textContent="";if(c.user.uid!==DEV_UID){auth.signOut();$("#er").textContent="관리자 계정이 아니에요"}})
+ .catch(e=>{$("#pw").value="";$("#er").textContent=e&&e.code=="auth/too-many-requests"?"시도가 너무 많아요. 잠시 후 다시 해 주세요":"로그인에 실패했어요 ("+((e&&e.code)||"unknown")+")"})}
+$("#lbrows").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button.del");if(!b)return;const nm=b.closest("tr").children[1].textContent;if(!confirm("'"+nm+"' 기록을 리더보드에서 삭제할까요?"))return;b.disabled=true;db.ref("lb/"+b.dataset.k).remove().catch(er=>{b.disabled=false;alert("삭제 실패: "+(er&&er.message||er))})});
+const act=async e=>{const b=e.target.closest&&e.target.closest("button");if(!b)return;const d=b.dataset;b.disabled=true;
+ try{if(d.ku){if(!confirm(d.ms?"100초 이상 행동이 없어요. 3분간 퇴장시킬까요?":"이 플레이어를 10분간 퇴장시킬까요?")){b.disabled=false;return}await db.ref("kick/"+d.ku).set(d.ms?{t:firebase.database.ServerValue.TIMESTAMP,ms:+d.ms}:{t:firebase.database.ServerValue.TIMESTAMP});const sn=await db.ref("lounge").once("value");sn.forEach(c=>{const x=c.val();if(x&&x.u===d.ku)db.ref("lounge/"+c.key).remove()})}
+ else if(d.sk){if(!confirm(d.m=="lounge"?"이 개발자를 "+(d.ms==180000?"3분":"10분")+"간 퇴장시킬까요?":"이 개발자 세션을 끊을까요? (개발자 모드 강제 잠금)")){b.disabled=false;return}await db.ref("kickS/"+d.sk).set({t:firebase.database.ServerValue.TIMESTAMP,m:d.m||"lock",ms:d.ms==180000?180000:null});if(d.m=="lounge"){const sn2=await db.ref("lounge").once("value");sn2.forEach(c=>{if(c.key===d.sk||c.key.indexOf(d.sk+"_")===0)db.ref("lounge/"+c.key).remove()})}if(d.st=="1"){try{await db.ref("presence/"+d.sk).remove()}catch(x){}}}}
+ catch(er){alert("실패: "+(er&&er.message||er))}b.disabled=false};
+["#rows","#lounge","#plaza"].forEach(q=>$(q).addEventListener("click",act));
+let kbd={};const KMS=600000;
+let kbs={};
+function kbItems(){const out=[];Object.keys(kbd).forEach(k=>{const v=kbd[k];if(v&&typeof v.t=="number")out.push({id:"u:"+k,t:v.t,e:v.t+(v.ms||KMS),lab:"#"+k.slice(-4)})});
+ Object.keys(kbs).forEach(k=>{const v=kbs[k];if(v&&typeof v.t=="number"){const lock=v.m=="lock";out.push({id:"s:"+k,t:v.t,e:lock?Infinity:v.t+(v.ms||KMS),lab:"👑 개발자 #"+k.slice(-4)+(lock?" · 추방(모드 잠금)":" · 라운지 퇴장")})}});
+ return out.sort((a,b)=>b.t-a.t)}
+function kbDraw(){const now=Date.now()+off,ids=kbItems();$("#kbc").textContent=ids.length+"명 · 진행 중 "+ids.filter(x=>x.e>now).length;
+ $("#kbl").innerHTML=ids.length?ids.slice(0,60).map(x=>{const l=x.e-now,tx=x.e===Infinity?"유지 중":(l>0?Math.ceil(l/60000)+"분 남음":"만료");return '<div style="display:flex;gap:8px;align-items:center;padding:2px 0"><span style="flex:1">'+esc(x.lab)+" · "+tx+'</span><button class="del" data-kd="'+esc(x.id)+'">해제</button></div>'}).join("")+(ids.length>60?"<div>…외 "+(ids.length-60)+"명</div>":""):"퇴장 기록이 없어요"}
+async function kbRm(ks){if(!ks.length)return;const u={};ks.forEach(k=>{u[(k.charAt(0)=="s"?"kickS/":"kick/")+k.slice(2)]=null});try{await db.ref().update(u)}catch(er){alert("해제 실패: "+(er&&er.message||er))}}
+$("#kbl").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button[data-kd]");if(b){b.disabled=true;kbRm([b.dataset.kd])}});
+$("#kbx").onclick=()=>{const now=Date.now()+off;kbRm(kbItems().filter(x=>!(x.e>now)).map(x=>x.id))};
+$("#kba").onclick=()=>{const ks=kbItems().map(x=>x.id);if(ks.length&&confirm("퇴장 기록 "+ks.length+"건을 전부 해제할까요?"))kbRm(ks)};
+function tgOpts(){const m={};Object.keys(last).forEach(i=>{const o=last[i];if(o&&o.u&&!o.d)m[o.u]=o.n});lbL.forEach(x=>{if(x.key&&!m[x.key])m[x.key]=x.n});tgMap=m;const sel=$("#tgp"),cur=sel.value,ks=Object.keys(m),sig=ks.map(k=>k+m[k]).join("|");if(sel.dataset.sig===sig){tgDraw();return}sel.dataset.sig=sig;sel.innerHTML=ks.map(k=>'<option value="'+esc(k)+'">'+esc(String(m[k]||"?").slice(0,12))+" #"+esc(k.slice(-4))+"</option>").join("")||'<option value="">대상이 없어요</option>';if(cur&&m[cur])sel.value=cur;tgDraw()}
+function tgDraw(){const ks=Object.keys(tgd).filter(k=>+tgd[k]>=1&&+tgd[k]<=4);$("#tgc").textContent=ks.length;$("#tgl").innerHTML=ks.length?ks.map(k=>'<div style="display:flex;gap:8px;align-items:center;padding:2px 0"><span style="flex:1">'+esc(String(tgMap[k]||"?").slice(0,12))+' <span class="mut" style="font-size:12px">#'+esc(k.slice(-4))+"</span> · "+TB[+tgd[k]]+" "+TN[+tgd[k]]+'</span><button class="del" data-tr="'+esc(k)+'">해제</button></div>').join(""):"부여한 티어가 없어요"}
+$("#tgb").onclick=async()=>{const u=$("#tgp").value,t=+$("#tgt").value;if(!u){alert("대상 플레이어를 선택하세요");return}if(!confirm("'"+(tgMap[u]||"?")+"' 님에게 "+TB[t]+" "+TN[t]+" 티어를 부여할까요?"))return;try{await db.ref("tier/"+u).set(t)}catch(er){alert("부여 실패: "+(er&&er.message||er))}};
+$("#tgl").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button[data-tr]");if(!b)return;b.disabled=true;db.ref("tier/"+b.dataset.tr).remove().catch(er=>{b.disabled=false;alert("해제 실패: "+(er&&er.message||er))})});
+$("#go").onclick=login;$("#pw").addEventListener("keydown",e=>{if(e.key=="Enter")login()});$("#out").onclick=()=>auth.signOut();
+</script></body></html>
